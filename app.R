@@ -19,6 +19,11 @@ ui <- fluidPage(
    # Sidebar with a slider input for number of bins 
    sidebarLayout(
       sidebarPanel(
+        tags$head(
+          tags$script(
+            src = '//cdnjs.cloudflare.com/ajax/libs/annyang/2.6.0/annyang.min.js'),
+          includeScript('voice.js')
+          ),
         disabled(actionButton('start', 'Begin working', width = 130)),
         br(),
         br(),
@@ -34,7 +39,7 @@ ui <- fluidPage(
       
       # Show a plot of the generated distribution
       mainPanel(
-        plotOutput('plot', width = 600, height = 600), 
+        plotOutput('plot'), 
         tableOutput('table')
       )
    )
@@ -85,6 +90,24 @@ server <- function(input, output, session) {
     })
   })
   
+  observeEvent(input$counter, {
+    enable('save')
+    insertUI(selector = '#name', where = 'afterEnd',
+             ui = tags$audio(src = "bell.mp3", type = "audio/mp3", 
+                             autoplay = NA, controls = NA, style="display:none;"))
+    isolate({
+      now = as.numeric(Sys.time())
+      past = max(as.numeric(vals$p$time), vals$init_time)
+      vals$p = rbind(vals$p, rep(NA,5))
+      rows = nrow(vals$p)
+      vals$p$interval[rows] = now - past
+      vals$p$time[rows] = Sys.time()
+      vals$p$pieces[rows] = vals$p$pieces[rows-1]-1
+      vals$p$name[rows] = input$name
+      vals$p$cumul = cumsum(vals$p$interval)
+    })
+  })
+  
    observeEvent(input$name, {
      if (input$name != "" & !is.na(as.integer(input$total))){
        enable('start')
@@ -111,10 +134,12 @@ server <- function(input, output, session) {
        df = puzzles
      }
      pplot <- ggplot(df, aes(x=cumul/3600, y=pieces, group=name, color=name)) +
-       geom_line(size = 1) +
+       #geom_line(size = 1) +
+       geom_smooth(method = 'loess') +
        xlab('Cumulative time, hours') + ylab('Pieces remaining') +
        scale_x_continuous(breaks = seq(0, 100, by=1)) +
-       labs(color = 'Puzzle name')
+       labs(color = 'Puzzle name') + theme_minimal(base_size = 17) + 
+       theme(aspect.ratio = 1)
      pplot
    })
    
@@ -127,9 +152,9 @@ server <- function(input, output, session) {
                         Cumulative = vals$p$cumul)
      }
      else {
-       df = data.frame(Name = puzzles$name, Pieces = as.integer(puzzles$pieces), 
-                       Time = format(puzzles$time), Interval = puzzles$interval,
-                       Cumulative = puzzles$cumul)
+       df = puzzles
+       df$time = format(df$time)
+       names(df) <- c('Name', 'Pieces', 'Time', 'Interval', 'Cumulative')
      }
      tail(df)
    })
