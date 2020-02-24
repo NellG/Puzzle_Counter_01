@@ -134,8 +134,8 @@ server <- function(input, output, session) {
        df = puzzles
      }
      pplot <- ggplot(df, aes(x=cumul/3600, y=pieces, group=name, color=name)) +
-       #geom_line(size = 1) +
-       geom_smooth(method = 'loess') +
+       geom_line(size = 1) +
+       #geom_smooth(method = 'loess') +
        xlab('Cumulative time, hours') + ylab('Pieces remaining') +
        scale_x_continuous(breaks = seq(0, 100, by=1)) +
        labs(color = 'Puzzle name') + theme_minimal(base_size = 17) + 

@@ -1,7 +1,7 @@
 if(annyang) {
   var value = 0;
   var commands = {
-    'ding': function() {
+    'biscuit': function() {
       value += 1;
       Shiny.onInputChange('counter', value);
     }
