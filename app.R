@@ -34,13 +34,13 @@ ui <- fluidPage(
                   value = ''),
         textInput('total', 'Pieces in puzzle:',
                   value = ''),
-        disabled(actionButton('save', 'Save Data to File'))
+        disabled(actionButton('save', 'Save Data to File')), 
+        tableOutput('table')
       ),
       
       # Show a plot of the generated distribution
       mainPanel(
-        plotOutput('plot'), 
-        tableOutput('table')
+        plotOutput('plot')
       )
    )
 )
