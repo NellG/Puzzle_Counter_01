@@ -6,6 +6,18 @@ library(shinyjs)
 library(ggplot2)
 puzzles <- readRDS('data/puzzles.rds')
 options(digits.secs = 2)
+js_script <- "
+if(annyang) {
+  var value = 0;
+  var commands = {
+    'biscuit': function() {
+      value += 1;
+      Shiny.onInputChange('counter', value);
+    }
+  };
+  annyang.addCommands(commands);
+  annyang.start();
+}"
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -19,11 +31,13 @@ ui <- fluidPage(
    # Sidebar with a slider input for number of bins 
    sidebarLayout(
       sidebarPanel(
-        tags$head(
-          tags$script(
-            src = '//cdnjs.cloudflare.com/ajax/libs/annyang/2.6.0/annyang.min.js'),
-          includeScript('voice.js')
-          ),
+        uiOutput('voiceControl'),
+        #tags$head(
+        #  tags$script(
+        #    src = '//cdnjs.cloudflare.com/ajax/libs/annyang/2.6.0/annyang.min.js'),
+        #  tags$script(HTML(js_script))
+          #includeScript('voice.js')
+        #  ),
         disabled(actionButton('start', 'Begin working', width = 130)),
         br(),
         br(),
@@ -34,6 +48,8 @@ ui <- fluidPage(
                   value = ''),
         textInput('total', 'Pieces in puzzle:',
                   value = ''),
+        textInput('keyword', "Keyword for voice recognition:",
+                  value = 'biscuit'),
         disabled(actionButton('save', 'Save Data to File')), 
         tableOutput('table')
       ),
@@ -55,6 +71,7 @@ server <- function(input, output, session) {
        updateActionButton(session, 'start', label = 'Pause')
        disable('total')
        disable('name')
+       disable('keyword')
        enable('click')
        vals$init_time <- as.numeric(Sys.time())
      }
@@ -161,6 +178,28 @@ server <- function(input, output, session) {
    
    observeEvent(input$save, {
      saveRDS(vals$p, paste('data/',vals$p$name[1],'.rds', sep=''))
+   })
+   
+   output$voiceControl <- renderUI({
+     nom <- input$name
+     js_script <- paste("
+        if(annyang) {
+          var value = 0;
+          var commands = {
+            '",input$keyword,"': function() {
+              value += 1;
+              Shiny.onInputChange('counter', value);
+            }
+          };
+          annyang.addCommands(commands);
+          annyang.start();
+        }")
+     tags$head(
+       tags$script(
+         src = '//cdnjs.cloudflare.com/ajax/libs/annyang/2.6.0/annyang.min.js'),
+     #  tags$script(HTML(js_script))
+     includeScript('voice.js')
+     )
    })
 }
 
