@@ -1,9 +1,9 @@
 if(annyang) {
   var value = 0;
   var commands = {
-    'biscuit': function() {
-      value += 1;
-      Shiny.onInputChange('counter', value);
+    '*val': function(val) {
+      value = val;
+      Shiny.onInputChange('spoken', value);
     }
   };
   annyang.addCommands(commands);
