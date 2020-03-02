@@ -4,8 +4,28 @@
 library(shiny)
 library(shinyjs)
 library(ggplot2)
+
 puzzles <- readRDS('data/puzzles.rds')
 options(digits.secs = 2)
+
+updatedf<- function(df, init_time, pname){
+  now = as.numeric(Sys.time())
+  past = max(as.numeric(df$time), init_time)
+  df = rbind(df, rep(NA,5))
+  rows = nrow(df)
+  df$interval[rows] = now - past
+  df$time[rows] = Sys.time()
+  df$pieces[rows] = df$pieces[rows-1]-1
+  df$name[rows] = pname
+  df$cumul = cumsum(df$interval)
+  return(df)
+}
+
+formatdf <- function(df){
+  dfout = data.frame(Name = df$name, Pieces = as.integer(df$pieces), 
+                  Time = format(df$time), Interval = df$interval)
+  return(dfout)
+}
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -88,15 +108,7 @@ server <- function(input, output, session) {
   observeEvent(input$click, {
     enable('save')
     isolate({
-      now = as.numeric(Sys.time())
-      past = max(as.numeric(vals$p$time), vals$init_time)
-      vals$p = rbind(vals$p, rep(NA,5))
-      rows = nrow(vals$p)
-      vals$p$interval[rows] = now - past
-      vals$p$time[rows] = Sys.time()
-      vals$p$pieces[rows] = vals$p$pieces[rows-1]-1
-      vals$p$name[rows] = input$name
-      vals$p$cumul = cumsum(vals$p$interval)
+      vals$p = updatedf(vals$p, vals$init_time, input$name)
     })
   })
   
@@ -107,68 +119,40 @@ server <- function(input, output, session) {
                ui = tags$audio(src = "bell.mp3", type = "audio/mp3", 
                                autoplay = NA, controls = NA, style="display:none;"))
       isolate({
-        now = as.numeric(Sys.time())
-        past = max(as.numeric(vals$p$time), vals$init_time)
-        vals$p = rbind(vals$p, rep(NA,5))
-        rows = nrow(vals$p)
-        vals$p$interval[rows] = now - past
-        vals$p$time[rows] = Sys.time()
-        vals$p$pieces[rows] = vals$p$pieces[rows-1]-1
-        vals$p$name[rows] = input$name
-        vals$p$cumul = cumsum(vals$p$interval)
+        vals$p = updatedf(vals$p, vals$init_time, input$name)
       })
     }
   })
   
-   observeEvent(input$name, {
-     if (input$name != "" & !is.na(as.integer(input$total))){
-       enable('start')
-     }
-   })
-   
-   observeEvent(input$total, {
-     if (!is.na(as.integer(input$total))) {
-       pieces = as.integer(input$total)
-       if (input$name != ""){
-         enable('start')
-       }
-     }
-     else {
-       updateTextInput(session, 'total', value = '')
-     }
-   })
+  observeEvent({input$name
+                input$total}, {
+    if (!is.na(as.integer(input$total))){
+      pieces = as.integer(input$total)
+      if (input$name != ''){
+        enable('start')
+      }
+    }
+    else {
+      updateTextInput(session, 'total', value='')
+    }
+  })
    
    output$pvt_plot <- renderPlot({
-     if (input$start >= 1){
-       df = rbind(puzzles[puzzles$name != input$name,], vals$p)
-     }
-     else {
-       df = puzzles
-     }
-     pplot <- ggplot(df, aes(x=cumul/3600, y=pieces, group=name, color=name)) +
+     if (input$start >= 1){ df = rbind(puzzles[puzzles$name != input$name,], vals$p) }
+     else { df = puzzles }
+     
+     ggplot(df, aes(x=cumul/3600, y=pieces, group=name, color=name)) +
        geom_line(size = 1) +
        xlab('Cumulative time, hours') + ylab('Pieces remaining') +
        scale_x_continuous(breaks = seq(0, 100, by=1)) +
        labs(color = 'Puzzle name') + theme_minimal(base_size = 17) + 
        theme(aspect.ratio = 1)
-     pplot
    })
    
    output$table <- renderTable({
-     #puzzles$time <- format(puzzles$time, '%Y-%m-%d %h')
-     #vals$time = puzzles$time
-     if(input$start >= 1){
-       df = data.frame(Name = vals$p$name, Pieces = as.integer(vals$p$pieces), 
-                        Time = format(vals$p$time), Interval = vals$p$interval,
-                        Cumulative = vals$p$cumul)
-     }
-     else {
-       df = puzzles
-       df$pieces = as.integer(df$pieces)
-       df$time = format(df$time)
-       names(df) <- c('Name', 'Pieces', 'Time', 'Interval', 'Cumulative')
-     }
-     tail(df)
+     if(input$start >= 1){ df = vals$p }
+     else { df <- puzzles }
+     tail(formatdf(df))
    })
    
    observeEvent(input$save, {
