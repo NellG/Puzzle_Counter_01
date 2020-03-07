@@ -3,7 +3,8 @@ if(annyang) {
   var commands = {
     '*val': function(val) {
       value = val;
-      Shiny.onInputChange('spoken', value);
+      buffer = 'chartruese';
+      Shiny.onInputChange('spoken', value, {priority: 'event'});
     }
   };
   annyang.addCommands(commands);
