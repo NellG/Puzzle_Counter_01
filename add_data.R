@@ -34,4 +34,21 @@ ggplot(combined, aes(x=pieces, y=60/rollmean(interval,100,na.pad=TRUE), group=na
   labs(color = 'Puzzle name') + theme_minimal(base_size = 17) + 
   theme(aspect.ratio = 1)
 
+bar_width = 100
+pieces = seq(bar_width/2, max(combined$pieces), bar_width)
+puzz_names = unique(combined$name)
+pieces = as.factor(pieces)
+int_mean <- function(minp, maxp, name){
+  interval = mean(combined$interval[(combined$pieces >= minp) &
+                                      (combined$pieces < maxp) &
+                                      (combined$name == name)])
+  return(interval)
+}
+bar_df = expand.grid(pieces = pieces, name = puzz_names)
+bar_df$pieces = as.numeric(levels(bar_df$pieces))
+bar_df$interval = mapply(int_mean, bar_df$pieces - bar_width/2, bar_df$pieces + bar_width/2, bar_df$name)
+
+ggplot(bar_df, aes(pieces, interval, fill = name)) +
+  geom_col(position = 'dodge')
+
 saveRDS(combined, './Puzzle_Counter_01/data/puzzles.rds')
