@@ -1,5 +1,6 @@
 # Rev 01 Puzzle Counter
-# Decrements pieces remaining when a button is clicked
+# Decrements pieces remaining when a button is clicked 
+# or the voice keyword is spoken (works in Chrome).
 
 library(shiny)
 library(shinyjs)

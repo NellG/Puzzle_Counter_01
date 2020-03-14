@@ -2,7 +2,7 @@
 
 library(zoo)
 
-puzzle_name = 'Glacier Bay'
+puzzle_name = 'Ship of Dreams'
 new_data = readRDS(paste('./Puzzle_Counter_01/data/',puzzle_name, '.rds', sep=''))
 old_data = readRDS(paste('./Puzzle_Counter_01/data/puzzles.rds'))
 
