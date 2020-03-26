@@ -35,7 +35,7 @@ ui <- fluidPage(
    useShinyjs(),
    
    # Application title
-   titlePanel("Click Button Puzzle Counter"),
+   titlePanel(h1("Jigsaw Puzzle Progress Timer App", align = 'center')),
    
    # Sidebar that calls annyang voice recognition library and js script then
    # has inputs for puzzle name, total number of pieces, desired keyword and
@@ -54,12 +54,14 @@ ui <- fluidPage(
                   value = ''),
         textInput('keyword', "Keyword for voice recognition:",
                   value = 'check'),
+        helpText('Voice recognition works best (only) in Chrome on a PC.'),
         br(),
         span(disabled(actionButton('start', 'Begin working', width = 130)),
              disabled(actionButton('click', 'Piece placed'))),
+        helpText('If "Piece placed" button is selected you can also
+                  hit spacebar to record a piece placement.'),
         br(),
-        br(),
-        disabled(actionButton('save', 'Save Data to File')),
+        disabled(downloadButton('save', 'Download Data to File')),
         br(),
         br(),
         tableOutput('table')
@@ -67,6 +69,9 @@ ui <- fluidPage(
       
       # Show a plot pieces remaining vs cumulative work time
       mainPanel(
+        p('Welcome to the jigsaw puzzle counter! Please enter the name
+          of your puzzle and the number of pieces. Your puzzle progress
+           will be plotted below.', style = "font-size: 14pt"),
         plotOutput('pvt_plot')
       )
    )
@@ -156,9 +161,17 @@ server <- function(input, output, session) {
      tail(formatdf(df))
    })
    
-   observeEvent(input$save, {
-     saveRDS(vals$p, paste('data/',vals$p$name[1],'.rds', sep=''))
-   })
+   output$save <- downloadHandler(
+     filename = function() {
+       paste(input$name, '-', Sys.Date(), '.rds', sep='')
+     },
+     content = function(file) {
+       saveRDS(vals$p, file)
+     }
+   )
+   #observeEvent(input$save, {
+  #   saveRDS(vals$p, paste('data/',vals$p$name[1],'.rds', sep=''))
+   #})
 }
 
 # Run the application 

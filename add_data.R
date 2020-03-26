@@ -51,4 +51,5 @@ bar_df$interval = mapply(int_mean, bar_df$pieces - bar_width/2, bar_df$pieces + 
 ggplot(bar_df, aes(pieces, interval, fill = name)) +
   geom_col(position = 'dodge')
 
-saveRDS(combined, './Puzzle_Counter_01/data/puzzles.rds')
+saveRDS(combined,'./Puzzle_Counter_01/data/puzzles.rds')
+
