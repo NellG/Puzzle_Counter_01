@@ -9,7 +9,7 @@ library(ggplot2)
 puzzles <- readRDS('data/puzzles.rds')
 options(digits.secs = 2)
 
-updatedf<- function(df, init_time, pname){
+updatedf<- function(df, init_time){
   now = as.numeric(Sys.time())
   past = max(as.numeric(df$time), init_time)
   df = rbind(df, rep(NA,5))
@@ -17,7 +17,7 @@ updatedf<- function(df, init_time, pname){
   df$interval[rows] = now - past
   df$time[rows] = Sys.time()
   df$pieces[rows] = df$pieces[rows-1]-1
-  df$name[rows] = pname
+  df$name[rows] = df$name[rows-1]
   df$cumul = cumsum(df$interval)
   return(df)
 }
@@ -48,6 +48,9 @@ ui <- fluidPage(
             src = '//cdnjs.cloudflare.com/ajax/libs/annyang/2.6.0/annyang.min.js'),
           includeScript('voice.js')
           ),
+        fileInput('upfile', 'Upload puzzle data:', 
+                  multiple = FALSE, accept = '.rds'),
+        helpText('Continue working on a previously saved puzzle.'),
         textInput('name', 'Puzzle name:',
                   value = ''),
         textInput('total', 'Pieces in puzzle:',
@@ -58,7 +61,7 @@ ui <- fluidPage(
         br(),
         span(disabled(actionButton('start', 'Begin working', width = 130)),
              disabled(actionButton('click', 'Piece placed'))),
-        helpText('If "Piece placed" button is selected you can also
+        helpText('If the "Piece placed" button is selected you can also
                   hit spacebar to record a piece placement.'),
         br(),
         disabled(downloadButton('save', 'Download Data to File')),
@@ -70,8 +73,9 @@ ui <- fluidPage(
       # Show a plot pieces remaining vs cumulative work time
       mainPanel(
         p('Welcome to the jigsaw puzzle counter! Please enter the name
-          of your puzzle and the number of pieces. Your puzzle progress
-           will be plotted below.', style = "font-size: 14pt"),
+          of your puzzle and the number of pieces or upload the saved file
+          from a puzzle you have worked on previously. Your puzzle progress 
+          will be plotted below.', style = "font-size: 14pt"),
         plotOutput('pvt_plot')
       )
    )
@@ -98,10 +102,12 @@ server <- function(input, output, session) {
        enable('click')
        vals$init_time <- as.numeric(Sys.time())
        if (input$start == 1){
-         vals$p = puzzles[puzzles$name == input$name,]
-         if (length(which(puzzles$name == input$name)) == 0){
-           vals$p <-data.frame(name = as.character(input$name), pieces = as.numeric(input$total), 
-                               time=Sys.time(), interval=0, cumul=0)
+         if (input$name != ''){
+           vals$p = puzzles[puzzles$name == input$name,]
+           if (length(which(puzzles$name == input$name)) == 0){
+               vals$p <-data.frame(name = as.character(input$name), pieces = as.numeric(input$total), 
+                                   time=Sys.time(), interval=0, cumul=0)
+           }
          }
        }
      }
@@ -114,7 +120,7 @@ server <- function(input, output, session) {
   observeEvent(input$click, {
     enable('save')
     isolate({
-      vals$p = updatedf(vals$p, vals$init_time, input$name)
+      vals$p = updatedf(vals$p, vals$init_time)
     })
   })
   
@@ -125,7 +131,7 @@ server <- function(input, output, session) {
                ui = tags$audio(src = "bell.mp3", type = "audio/mp3", 
                                autoplay = NA, controls = NA, style="display:none;"))
       isolate({
-        vals$p = updatedf(vals$p, vals$init_time, input$name)
+        vals$p = updatedf(vals$p, vals$init_time)
       })
     }
   })
@@ -136,11 +142,19 @@ server <- function(input, output, session) {
       pieces = as.integer(input$total)
       if (input$name != ''){
         enable('start')
+        disable()
       }
     }
     else {
       updateTextInput(session, 'total', value='')
     }
+  })
+  
+  observeEvent(input$upfile, {
+    vals$p = readRDS(input$upfile$datapath)
+    disable('total')
+    disable('name')
+    enable('start')
   })
    
    output$pvt_plot <- renderPlot({
@@ -158,7 +172,7 @@ server <- function(input, output, session) {
    output$table <- renderTable({
      if(input$start >= 1){ df = vals$p }
      else { df <- puzzles }
-     tail(formatdf(df))
+     tail(formatdf(df), n = 3)
    })
    
    output$save <- downloadHandler(
