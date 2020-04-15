@@ -5,7 +5,12 @@
 library(shiny)
 library(shinyjs)
 library(ggplot2)
+library(rdrop2)
 
+token = readRDS('data/token.rds')
+drop_download('puzzles.rds', overwrite = TRUE, 
+              local_path = 'data/puzzles.rds',
+              dtoken = token)
 puzzles <- readRDS('data/puzzles.rds')
 options(digits.secs = 2)
 
@@ -48,9 +53,8 @@ ui <- fluidPage(
             src = '//cdnjs.cloudflare.com/ajax/libs/annyang/2.6.0/annyang.min.js'),
           includeScript('voice.js')
           ),
-        fileInput('upfile', 'Upload puzzle data:', 
+        fileInput('upfile', 'Upload previously saved puzzle data to continue working:', 
                   multiple = FALSE, accept = '.rds'),
-        helpText('Continue working on a previously saved puzzle.'),
         textInput('name', 'Puzzle name:',
                   value = ''),
         textInput('total', 'Pieces in puzzle:',
@@ -75,7 +79,10 @@ ui <- fluidPage(
         p('Welcome to the jigsaw puzzle counter! Please enter the name
           of your puzzle and the number of pieces or upload the saved file
           from a puzzle you have worked on previously. Your puzzle progress 
-          will be plotted below.', style = "font-size: 14pt"),
+          will be plotted below. If you would like your puzzle data included in
+          the main plot for all users, and in any future statistical analysis, please email the
+          data file for the completed puzzle to: nellspuzzles.at.gmail.', 
+          style = "font-size: 14pt"),
         plotOutput('pvt_plot')
       )
    )

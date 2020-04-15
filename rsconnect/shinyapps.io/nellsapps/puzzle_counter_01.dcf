@@ -5,6 +5,9 @@ account: nellsapps
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1934699
-bundleId: 2930619
+bundleId: 2937663
 url: https://nellsapps.shinyapps.io/puzzle_counter_01/
-when: 1585281752.2433
+when: 1585438742.30082
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: add_data.R
